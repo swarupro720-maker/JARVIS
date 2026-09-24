@@ -1,0 +1,929 @@
+/* =====================================================
+   JARVIS 2
+   MAIN INTERFACE
+===================================================== */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+
+  --bg: #02060b;
+  --panel: #071018;
+  --panel2: #091722;
+
+  --cyan: #00eaff;
+  --cyan-soft: rgba(0, 234, 255, 0.35);
+
+  --orange: #ff8a00;
+
+  --text: #dffcff;
+  --muted: #76929c;
+
+  --border: rgba(0, 234, 255, 0.22);
+}
+
+body {
+
+  min-height: 100vh;
+
+  background:
+    radial-gradient(
+      circle at 50% 20%,
+      rgba(0, 234, 255, 0.08),
+      transparent 35%
+    ),
+    #02060b;
+
+  color: var(--text);
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  overflow-x: hidden;
+}
+
+
+/* =====================================================
+   APP
+===================================================== */
+
+.app {
+
+  width: min(1500px, 96%);
+
+  margin: auto;
+
+  min-height: 100vh;
+
+  padding: 20px;
+}
+
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.topbar {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  padding: 20px 24px;
+
+  border: 1px solid var(--border);
+
+  background: rgba(5, 14, 22, 0.9);
+
+  box-shadow:
+    0 0 30px rgba(0, 234, 255, 0.08);
+
+  margin-bottom: 18px;
+}
+
+.brand {
+
+  font-size: 32px;
+
+  font-weight: 800;
+
+  letter-spacing: 5px;
+
+  color: var(--cyan);
+
+  text-shadow:
+    0 0 10px var(--cyan-soft);
+}
+
+.subtitle {
+
+  font-size: 11px;
+
+  letter-spacing: 3px;
+
+  color: var(--muted);
+
+  margin-top: 5px;
+}
+
+.online-status {
+
+  font-size: 12px;
+
+  letter-spacing: 2px;
+
+  color: #baffc7;
+
+}
+
+.status-dot {
+
+  display: inline-block;
+
+  width: 8px;
+
+  height: 8px;
+
+  border-radius: 50%;
+
+  background: #39ff88;
+
+  box-shadow:
+    0 0 10px #39ff88;
+
+  margin-right: 6px;
+}
+
+
+/* =====================================================
+   MAIN GRID
+===================================================== */
+
+.main-grid {
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.7fr)
+    minmax(300px, 0.8fr);
+
+  gap: 18px;
+}
+
+.left-panel,
+.right-panel {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 18px;
+}
+
+
+/* =====================================================
+   CARDS
+===================================================== */
+
+.core-card,
+.chat-card,
+.control-card {
+
+  border: 1px solid var(--border);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(7, 16, 24, 0.97),
+      rgba(2, 8, 13, 0.97)
+    );
+
+  box-shadow:
+    inset 0 0 30px rgba(0, 234, 255, 0.025),
+    0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+.core-card {
+
+  min-height: 430px;
+
+  position: relative;
+
+  overflow: hidden;
+}
+
+.section-title {
+
+  font-size: 11px;
+
+  font-weight: bold;
+
+  letter-spacing: 3px;
+
+  color: var(--cyan);
+
+  padding: 15px 18px;
+
+  border-bottom: 1px solid var(--border);
+
+  background: rgba(0, 234, 255, 0.025);
+}
+
+
+/* =====================================================
+   VISUAL CORE
+===================================================== */
+
+.core {
+
+  position: relative;
+
+  width: min(330px, 75vw);
+
+  height: 330px;
+
+  margin: 35px auto 15px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+}
+
+.orbit {
+
+  position: absolute;
+
+  border: 1px solid var(--cyan);
+
+  border-radius: 50%;
+
+  opacity: 0.45;
+
+  box-shadow:
+    0 0 15px var(--cyan-soft);
+}
+
+.orbit-1 {
+
+  width: 290px;
+  height: 290px;
+
+  animation:
+    rotateClockwise 14s linear infinite;
+}
+
+.orbit-2 {
+
+  width: 230px;
+  height: 230px;
+
+  transform: rotate(45deg);
+
+  border-style: dashed;
+
+  animation:
+    rotateReverse 9s linear infinite;
+}
+
+.orbit-3 {
+
+  width: 165px;
+  height: 165px;
+
+  animation:
+    rotateClockwise 6s linear infinite;
+}
+
+.core-lines {
+
+  position: absolute;
+
+  width: 100%;
+  height: 100%;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent 49.5%,
+      rgba(0, 234, 255, 0.25) 50%,
+      transparent 50.5%
+    ),
+    linear-gradient(
+      0deg,
+      transparent 49.5%,
+      rgba(0, 234, 255, 0.25) 50%,
+      transparent 50.5%
+    );
+
+  border-radius: 50%;
+}
+
+.core-center {
+
+  width: 95px;
+  height: 95px;
+
+  border: 2px solid var(--cyan);
+
+  border-radius: 50%;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  position: relative;
+
+  box-shadow:
+    0 0 20px var(--cyan-soft),
+    inset 0 0 20px rgba(0, 234, 255, 0.2);
+}
+
+.core-text {
+
+  font-size: 25px;
+
+  font-weight: bold;
+
+  letter-spacing: 3px;
+
+  color: var(--cyan);
+
+  z-index: 2;
+}
+
+.core-pulse {
+
+  position: absolute;
+
+  width: 100%;
+  height: 100%;
+
+  border-radius: 50%;
+
+  border: 1px solid var(--cyan);
+
+  animation: pulse 2s infinite;
+
+}
+
+.core-status {
+
+  text-align: center;
+
+  color: var(--muted);
+
+  font-size: 10px;
+
+  letter-spacing: 3px;
+}
+
+
+/* =====================================================
+   CHAT
+===================================================== */
+
+.chat-card {
+
+  min-height: 420px;
+
+  display: flex;
+
+  flex-direction: column;
+}
+
+.chat-box {
+
+  flex: 1;
+
+  min-height: 280px;
+
+  max-height: 420px;
+
+  overflow-y: auto;
+
+  padding: 18px;
+}
+
+.message {
+
+  margin-bottom: 14px;
+
+  padding: 12px 14px;
+
+  border-left: 2px solid var(--cyan);
+
+  background: rgba(0, 234, 255, 0.035);
+
+  line-height: 1.55;
+
+  font-size: 14px;
+}
+
+.message.user-message {
+
+  border-left-color: var(--orange);
+
+  background: rgba(255, 138, 0, 0.035);
+}
+
+.message-label {
+
+  font-size: 9px;
+
+  letter-spacing: 2px;
+
+  color: var(--cyan);
+
+  margin-bottom: 5px;
+}
+
+.user-message .message-label {
+
+  color: var(--orange);
+}
+
+
+/* =====================================================
+   INPUT
+===================================================== */
+
+.input-area {
+
+  display: flex;
+
+  gap: 8px;
+
+  padding: 14px;
+
+  border-top: 1px solid var(--border);
+}
+
+#userInput {
+
+  flex: 1;
+
+  min-width: 0;
+
+  background: #02070c;
+
+  border: 1px solid var(--border);
+
+  color: white;
+
+  outline: none;
+
+  padding: 13px;
+
+  font-size: 14px;
+}
+
+#userInput:focus {
+
+  border-color: var(--cyan);
+
+  box-shadow:
+    0 0 10px var(--cyan-soft);
+}
+
+.icon-button,
+.send-button,
+.control-button,
+.study-buttons button,
+.quick-grid button {
+
+  border: 1px solid var(--border);
+
+  background: #061018;
+
+  color: var(--cyan);
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.icon-button {
+
+  width: 46px;
+
+  font-size: 18px;
+}
+
+.send-button {
+
+  padding: 0 20px;
+
+  font-weight: bold;
+
+  letter-spacing: 1px;
+}
+
+.icon-button:hover,
+.send-button:hover,
+.control-button:hover,
+.study-buttons button:hover,
+.quick-grid button:hover {
+
+  border-color: var(--cyan);
+
+  box-shadow:
+    0 0 12px var(--cyan-soft);
+
+  background: rgba(0, 234, 255, 0.08);
+}
+
+.thinking {
+
+  height: 28px;
+
+  padding: 0 15px 10px;
+
+  color: var(--muted);
+
+  font-size: 11px;
+}
+
+
+/* =====================================================
+   RIGHT PANEL
+===================================================== */
+
+.control-card {
+
+  padding-bottom: 16px;
+}
+
+.core-info,
+.status-list {
+
+  padding: 15px 18px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 13px;
+}
+
+.core-info > div,
+.status-list > div {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  gap: 20px;
+}
+
+.core-info span,
+.status-list span {
+
+  color: var(--muted);
+
+  font-size: 10px;
+
+  letter-spacing: 2px;
+}
+
+.core-info strong,
+.status-list strong {
+
+  color: var(--cyan);
+
+  font-size: 11px;
+
+  letter-spacing: 1px;
+}
+
+
+/* =====================================================
+   VOICE
+===================================================== */
+
+.control-card label {
+
+  display: block;
+
+  color: var(--muted);
+
+  font-size: 10px;
+
+  letter-spacing: 2px;
+
+  margin: 14px 18px 7px;
+}
+
+select {
+
+  width: calc(100% - 36px);
+
+  margin: 0 18px;
+
+  padding: 10px;
+
+  background: #02070c;
+
+  color: white;
+
+  border: 1px solid var(--border);
+
+  outline: none;
+}
+
+.range-row {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin: 0 18px;
+}
+
+#speed {
+
+  flex: 1;
+}
+
+#speedValue {
+
+  width: 45px;
+
+  color: var(--cyan);
+
+  font-size: 11px;
+}
+
+.control-button {
+
+  margin: 16px 18px 0;
+
+  width: calc(100% - 36px);
+
+  padding: 10px;
+}
+
+
+/* =====================================================
+   STUDY MANAGER
+===================================================== */
+
+.study-time {
+
+  text-align: center;
+
+  padding: 18px;
+}
+
+.study-label {
+
+  font-size: 9px;
+
+  color: var(--muted);
+
+  letter-spacing: 2px;
+
+  margin-bottom: 8px;
+}
+
+#studyTimer {
+
+  font-size: 28px;
+
+  color: var(--cyan);
+
+  font-family: monospace;
+
+  text-shadow:
+    0 0 10px var(--cyan-soft);
+}
+
+.study-buttons {
+
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 6px;
+
+  padding: 0 18px;
+}
+
+.study-buttons button {
+
+  padding: 8px 3px;
+
+  font-size: 10px;
+}
+
+
+/* =====================================================
+   QUICK ACCESS
+===================================================== */
+
+.quick-grid {
+
+  display: grid;
+
+  grid-template-columns: repeat(2, 1fr);
+
+  gap: 7px;
+
+  padding: 15px 18px 0;
+}
+
+.quick-grid button {
+
+  padding: 10px 5px;
+
+  font-size: 10px;
+}
+
+
+/* =====================================================
+   FOOTER
+===================================================== */
+
+footer {
+
+  text-align: center;
+
+  padding: 20px;
+
+  color: var(--muted);
+
+  font-size: 9px;
+
+  letter-spacing: 2px;
+}
+
+footer span {
+
+  margin: 0 6px;
+}
+
+
+/* =====================================================
+   ANIMATIONS
+===================================================== */
+
+@keyframes rotateClockwise {
+
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes rotateReverse {
+
+  from {
+    transform: rotate(360deg);
+  }
+
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes pulse {
+
+  0% {
+    transform: scale(0.9);
+    opacity: 0.9;
+  }
+
+  70% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 850px) {
+
+  .main-grid {
+
+    grid-template-columns: 1fr;
+  }
+
+  .right-panel {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .topbar {
+
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 12px;
+  }
+
+}
+
+
+@media (max-width: 600px) {
+
+  .app {
+
+    width: 100%;
+
+    padding: 8px;
+  }
+
+  .brand {
+
+    font-size: 25px;
+  }
+
+  .subtitle {
+
+    font-size: 8px;
+
+    letter-spacing: 2px;
+  }
+
+  .right-panel {
+
+    display: flex;
+  }
+
+  .core {
+
+    width: 280px;
+
+    height: 280px;
+  }
+
+  .orbit-1 {
+
+    width: 250px;
+
+    height: 250px;
+  }
+
+  .orbit-2 {
+
+    width: 200px;
+
+    height: 200px;
+  }
+
+  .orbit-3 {
+
+    width: 145px;
+
+    height: 145px;
+  }
+
+  .input-area {
+
+    flex-wrap: wrap;
+  }
+
+  #userInput {
+
+    order: 1;
+
+    width: 100%;
+  }
+
+  .icon-button {
+
+    order: 2;
+  }
+
+  .send-button {
+
+    order: 3;
+
+    flex: 1;
+  }
+}
+
+
+@media (max-width: 400px) {
+
+  .core {
+
+    transform: scale(0.85);
+  }
+
+  .quick-grid {
+
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .study-buttons {
+
+    grid-template-columns: 1fr;
+  }
+}

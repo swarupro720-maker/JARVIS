@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>JARVIS 2</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- ================= HEADER ================= -->
+
+  <header class="topbar">
+
+    <div>
+      <div class="brand">JARVIS 2</div>
+
+      <div class="subtitle">
+        JUST A RATHER VERY INTELLIGENT SYSTEM
+      </div>
+    </div>
+
+    <div class="online-status">
+      <span class="status-dot"></span>
+      ONLINE • READY
+    </div>
+
+  </header>
+
+
+  <!-- ================= MAIN ================= -->
+
+  <main class="main-grid">
+
+
+    <!-- ================= LEFT SIDE ================= -->
+
+    <section class="left-panel">
+
+
+      <!-- VISUAL CORE -->
+
+      <div class="core-card">
+
+        <div class="section-title">
+          JARVIS VISUAL CORE
+        </div>
+
+        <div class="core">
+
+          <div class="orbit orbit-1"></div>
+          <div class="orbit orbit-2"></div>
+          <div class="orbit orbit-3"></div>
+
+          <div class="core-lines"></div>
+
+          <div class="core-center">
+
+            <div class="core-text">
+              J2
+            </div>
+
+            <div class="core-pulse"></div>
+
+          </div>
+
+        </div>
+
+        <div class="core-status">
+          SYSTEM CORE ACTIVE
+        </div>
+
+      </div>
+
+
+      <!-- CHAT -->
+
+      <div class="chat-card">
+
+        <div class="section-title">
+          COMMUNICATION
+        </div>
+
+        <div id="chatBox" class="chat-box">
+
+          <div class="message jarvis-message">
+
+            <div class="message-label">
+              JARVIS
+            </div>
+
+            <div>
+              Hello. I am JARVIS 2.
+              Your personal AI system is ready.
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="input-area">
+
+          <button
+            id="micButton"
+            class="icon-button"
+            title="Voice input"
+          >
+            🎙
+          </button>
+
+          <input
+            id="userInput"
+            type="text"
+            placeholder="Talk to JARVIS..."
+            autocomplete="off"
+          >
+
+          <button
+            id="sendButton"
+            class="send-button"
+          >
+            SEND
+          </button>
+
+        </div>
+
+
+        <div id="thinkingText" class="thinking">
+          JARVIS is ready.
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================= RIGHT SIDE ================= -->
+
+    <aside class="right-panel">
+
+
+      <!-- CORE -->
+
+      <div class="control-card">
+
+        <div class="section-title">
+          JARVIS CORE
+        </div>
+
+        <div class="core-info">
+
+          <div>
+            <span>VERSION</span>
+            <strong>2.0</strong>
+          </div>
+
+          <div>
+            <span>MODE</span>
+            <strong>ASSISTANT</strong>
+          </div>
+
+          <div>
+            <span>AI</span>
+            <strong id="aiStatus">LOCAL</strong>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- VOICE -->
+
+      <div class="control-card">
+
+        <div class="section-title">
+          VOICE OUTPUT
+        </div>
+
+        <label>
+          Voice
+        </label>
+
+        <select id="voiceSelect">
+          <option value="">Default voice</option>
+        </select>
+
+
+        <label>
+          Speed
+        </label>
+
+        <div class="range-row">
+
+          <input
+            id="speed"
+            type="range"
+            min="0.6"
+            max="1.5"
+            value="1"
+            step="0.05"
+          >
+
+          <span id="speedValue">1.00x</span>
+
+        </div>
+
+
+        <button
+          id="stopButton"
+          class="control-button"
+        >
+          STOP VOICE
+        </button>
+
+      </div>
+
+
+      <!-- SYSTEM STATUS -->
+
+      <div class="control-card">
+
+        <div class="section-title">
+          SYSTEM STATUS
+        </div>
+
+        <div class="status-list">
+
+          <div>
+            <span>NETWORK</span>
+            <strong id="networkStatus">
+              CHECKING
+            </strong>
+          </div>
+
+          <div>
+            <span>VOICE</span>
+            <strong id="voiceStatus">
+              READY
+            </strong>
+          </div>
+
+          <div>
+            <span>AI CORE</span>
+            <strong id="aiStatus2">
+              LOCAL
+            </strong>
+          </div>
+
+          <div>
+            <span>MEMORY</span>
+            <strong id="memoryStatus">
+              ACTIVE
+            </strong>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- STUDY -->
+
+      <div class="control-card">
+
+        <div class="section-title">
+          STUDY MANAGER
+        </div>
+
+        <div class="study-time">
+
+          <div class="study-label">
+            TODAY'S STUDY TIME
+          </div>
+
+          <div id="studyTimer">
+            00:00:00
+          </div>
+
+        </div>
+
+        <div class="study-buttons">
+
+          <button id="startStudy">
+            START
+          </button>
+
+          <button id="pauseStudy">
+            PAUSE
+          </button>
+
+          <button id="resetStudy">
+            RESET
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- QUICK ACCESS -->
+
+      <div class="control-card">
+
+        <div class="section-title">
+          QUICK ACCESS
+        </div>
+
+        <div class="quick-grid">
+
+          <button onclick="openWebApp('https://www.youtube.com')">
+            YouTube
+          </button>
+
+          <button onclick="openWebApp('https://mail.google.com')">
+            Gmail
+          </button>
+
+          <button onclick="openWebApp('https://drive.google.com')">
+            Drive
+          </button>
+
+          <button onclick="openWebApp('https://www.google.com')">
+            Google
+          </button>
+
+          <button onclick="openWebApp('https://docs.google.com')">
+            Docs
+          </button>
+
+          <button onclick="openWebApp('https://calendar.google.com')">
+            Calendar
+          </button>
+
+          <button onclick="openWebApp('https://meet.google.com')">
+            Meet
+          </button>
+
+          <button onclick="openWebApp('https://www.google.com/search?q=calculator')">
+            Calculator
+          </button>
+
+        </div>
+
+      </div>
+
+    </aside>
+
+  </main>
+
+
+  <!-- ================= FOOTER ================= -->
+
+  <footer>
+
+    JARVIS 2 • PERSONAL AI SYSTEM
+
+    <span>•</span>
+
+    <span id="footerTime">
+      --
+    </span>
+
+  </footer>
+
+</div>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>
