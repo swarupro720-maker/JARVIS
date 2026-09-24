@@ -1,15 +1,18 @@
 // ============================================================
-// JARVIS 2 — COMPLETE FRONTEND JAVASCRIPT
-// Google Apps Script + Gemini Backend
+// JARVIS 2 — COMPLETE FRONTEND
+// Gemini AI + Google Apps Script Backend
 // ============================================================
 
 const JARVIS_CONFIG = {
     backendUrl:
-        "https://script.google.com/macros/s/AKfycbxIPKL1eu31w1iFje-fz8KqEhy_TipDzqokW-OsbrwrrlBbDgQdP_xrlyBJnYcuZu80/exec",
+        "https://script.google.com/macros/s/AKfycbwYK7YKKp1Ww087kxCYATjIhiWJ0my4mi-vNGjMArACiSTpVuwfzQmSJrH1qJEkWehS/exec",
 
     assistantName: "JARVIS 2",
+
     maxHistory: 12,
+
     speechRate: 1.0,
+
     speechPitch: 1.0
 };
 
@@ -18,30 +21,62 @@ const JARVIS_CONFIG = {
 // DOM ELEMENTS
 // ============================================================
 
-const userInput = document.getElementById("userInput");
-const sendButton = document.getElementById("sendButton");
-const micButton = document.getElementById("micButton");
-const stopButton = document.getElementById("stopButton");
+const userInput =
+    document.getElementById("userInput");
 
-const chatMessages = document.getElementById("chatMessages");
-const thinkingText = document.getElementById("thinkingText");
+const sendButton =
+    document.getElementById("sendButton");
 
-const voiceSelect = document.getElementById("voiceSelect");
-const speedSlider = document.getElementById("speed");
-const speedValue = document.getElementById("speedValue");
+const micButton =
+    document.getElementById("micButton");
 
-const networkStatus = document.getElementById("networkStatus");
-const voiceStatus = document.getElementById("voiceStatus");
-const aiStatus = document.getElementById("aiStatus");
-const aiStatus2 = document.getElementById("aiStatus2");
-const memoryStatus = document.getElementById("memoryStatus");
+const stopButton =
+    document.getElementById("stopButton");
 
-const studyTimerDisplay = document.getElementById("studyTimer");
-const startStudyButton = document.getElementById("startStudy");
-const pauseStudyButton = document.getElementById("pauseStudy");
-const resetStudyButton = document.getElementById("resetStudy");
+const chatMessages =
+    document.getElementById("chatMessages");
 
-const footerTime = document.getElementById("footerTime");
+const thinkingText =
+    document.getElementById("thinkingText");
+
+const voiceSelect =
+    document.getElementById("voiceSelect");
+
+const speedSlider =
+    document.getElementById("speed");
+
+const speedValue =
+    document.getElementById("speedValue");
+
+const networkStatus =
+    document.getElementById("networkStatus");
+
+const voiceStatus =
+    document.getElementById("voiceStatus");
+
+const aiStatus =
+    document.getElementById("aiStatus");
+
+const aiStatus2 =
+    document.getElementById("aiStatus2");
+
+const memoryStatus =
+    document.getElementById("memoryStatus");
+
+const studyTimerDisplay =
+    document.getElementById("studyTimer");
+
+const startStudyButton =
+    document.getElementById("startStudy");
+
+const pauseStudyButton =
+    document.getElementById("pauseStudy");
+
+const resetStudyButton =
+    document.getElementById("resetStudy");
+
+const footerTime =
+    document.getElementById("footerTime");
 
 
 // ============================================================
@@ -51,13 +86,16 @@ const footerTime = document.getElementById("footerTime");
 let conversationHistory = [];
 
 let voices = [];
+
 let recognition = null;
+
 let listening = false;
 
-let studySeconds = 0;
-let studyInterval = null;
-
 let isProcessing = false;
+
+let studySeconds = 0;
+
+let studyInterval = null;
 
 
 // ============================================================
@@ -67,6 +105,8 @@ let isProcessing = false;
 function initializeJarvis() {
 
     loadConversation();
+
+    loadStudyTime();
 
     loadVoices();
 
@@ -80,8 +120,6 @@ function initializeJarvis() {
 
     setInterval(updateClock, 1000);
 
-    updateStudyTimer();
-
     addStartupMessage();
 
     console.log("JARVIS 2 initialized.");
@@ -94,13 +132,15 @@ function initializeJarvis() {
 
 function addStartupMessage() {
 
-    if (chatMessages && chatMessages.children.length > 0) {
+    if (!chatMessages) return;
+
+    if (chatMessages.children.length > 0) {
         return;
     }
 
     addMessage(
         "JARVIS",
-        "Systems online. AI backend connection ready. How can I help you?"
+        "Systems online. JARVIS 2 is ready."
     );
 }
 
@@ -112,125 +152,208 @@ function addStartupMessage() {
 function setupEventListeners() {
 
     if (sendButton) {
-        sendButton.addEventListener("click", sendMessage);
+
+        sendButton.addEventListener(
+            "click",
+            sendMessage
+        );
     }
+
 
     if (userInput) {
 
-        userInput.addEventListener("keydown", function (event) {
+        userInput.addEventListener(
+            "keydown",
+            function(event) {
 
-            if (event.key === "Enter" && !event.shiftKey) {
+                if (
+                    event.key === "Enter" &&
+                    !event.shiftKey
+                ) {
 
-                event.preventDefault();
+                    event.preventDefault();
 
-                sendMessage();
+                    sendMessage();
+                }
             }
-        });
+        );
     }
+
 
     if (micButton) {
-        micButton.addEventListener("click", toggleMicrophone);
+
+        micButton.addEventListener(
+            "click",
+            toggleMicrophone
+        );
     }
 
+
     if (stopButton) {
-        stopButton.addEventListener("click", stopSpeaking);
+
+        stopButton.addEventListener(
+            "click",
+            stopSpeaking
+        );
     }
+
 
     if (speedSlider) {
 
-        speedSlider.addEventListener("input", function () {
+        speedSlider.addEventListener(
+            "input",
+            function() {
 
-            const value = parseFloat(speedSlider.value);
+                const value =
+                    parseFloat(
+                        speedSlider.value
+                    );
 
-            JARVIS_CONFIG.speechRate = value;
+                JARVIS_CONFIG.speechRate =
+                    value;
 
-            if (speedValue) {
-                speedValue.textContent = value.toFixed(1) + "x";
+                if (speedValue) {
+
+                    speedValue.textContent =
+                        value.toFixed(1) + "x";
+                }
             }
-        });
+        );
     }
+
 
     if (voiceSelect) {
 
-        voiceSelect.addEventListener("change", function () {
+        voiceSelect.addEventListener(
+            "change",
+            function() {
 
-            localStorage.setItem(
-                "jarvisVoice",
-                voiceSelect.value
-            );
-        });
+                localStorage.setItem(
+                    "jarvisVoice",
+                    voiceSelect.value
+                );
+            }
+        );
     }
 
+
     if (startStudyButton) {
+
         startStudyButton.addEventListener(
             "click",
             startStudyTimer
         );
     }
 
+
     if (pauseStudyButton) {
+
         pauseStudyButton.addEventListener(
             "click",
             pauseStudyTimer
         );
     }
 
+
     if (resetStudyButton) {
+
         resetStudyButton.addEventListener(
             "click",
             resetStudyTimer
         );
     }
 
-    document.querySelectorAll("[data-command]").forEach(button => {
 
-        button.addEventListener("click", function () {
+    document
+        .querySelectorAll("[data-command]")
+        .forEach(function(button) {
 
-            const command = this.dataset.command;
+            button.addEventListener(
+                "click",
+                function() {
 
-            if (command) {
-                userInput.value = command;
-                sendMessage();
-            }
+                    const command =
+                        this.dataset.command;
+
+                    if (command && userInput) {
+
+                        userInput.value =
+                            command;
+
+                        sendMessage();
+                    }
+                }
+            );
         });
-    });
 }
 
 
 // ============================================================
-// CHAT MESSAGE DISPLAY
+// ADD CHAT MESSAGE
 // ============================================================
 
-function addMessage(sender, message, type = "normal") {
+function addMessage(
+    sender,
+    message
+) {
 
     if (!chatMessages) return;
 
-    const messageContainer = document.createElement("div");
 
-    messageContainer.className =
+    const container =
+        document.createElement("div");
+
+
+    container.className =
         "chat-message " +
-        (sender === "USER" ? "user-message" : "jarvis-message");
+        (
+            sender === "USER"
+                ? "user-message"
+                : "jarvis-message"
+        );
 
-    const senderElement = document.createElement("div");
 
-    senderElement.className = "message-sender";
+    const senderElement =
+        document.createElement("div");
 
-    senderElement.textContent = sender;
 
-    const messageElement = document.createElement("div");
+    senderElement.className =
+        "message-sender";
 
-    messageElement.className = "message-text";
 
-    messageElement.textContent = message;
+    senderElement.textContent =
+        sender;
 
-    messageContainer.appendChild(senderElement);
-    messageContainer.appendChild(messageElement);
 
-    chatMessages.appendChild(messageContainer);
+    const messageElement =
+        document.createElement("div");
 
-    chatMessages.scrollTop = chatMessages.scrollHeight;
 
-    return messageContainer;
+    messageElement.className =
+        "message-text";
+
+
+    messageElement.textContent =
+        message;
+
+
+    container.appendChild(
+        senderElement
+    );
+
+
+    container.appendChild(
+        messageElement
+    );
+
+
+    chatMessages.appendChild(
+        container
+    );
+
+
+    chatMessages.scrollTop =
+        chatMessages.scrollHeight;
 }
 
 
@@ -244,36 +367,58 @@ async function sendMessage() {
 
     if (!userInput) return;
 
-    const message = userInput.value.trim();
+
+    const message =
+        userInput.value.trim();
+
 
     if (!message) return;
 
+
     isProcessing = true;
+
 
     userInput.value = "";
 
-    addMessage("USER", message);
 
-    saveConversationMessage("user", message);
+    addMessage(
+        "USER",
+        message
+    );
+
+
+    saveConversationMessage(
+        "user",
+        message
+    );
+
 
     showThinking(true);
+
 
     try {
 
         // ----------------------------------------------------
-        // FIRST: LOCAL COMMANDS
+        // LOCAL COMMANDS
         // ----------------------------------------------------
 
-        const localResult = processLocalCommand(message);
+        const localResult =
+            processLocalCommand(message);
+
 
         if (localResult !== null) {
 
-            addMessage("JARVIS", localResult);
+            addMessage(
+                "JARVIS",
+                localResult
+            );
+
 
             saveConversationMessage(
                 "assistant",
                 localResult
             );
+
 
             speak(localResult);
 
@@ -282,19 +427,26 @@ async function sendMessage() {
 
 
         // ----------------------------------------------------
-        // SECOND: LOCAL MATH
+        // SIMPLE MATH
         // ----------------------------------------------------
 
-        const mathResult = processMath(message);
+        const mathResult =
+            processMath(message);
+
 
         if (mathResult !== null) {
 
-            addMessage("JARVIS", mathResult);
+            addMessage(
+                "JARVIS",
+                mathResult
+            );
+
 
             saveConversationMessage(
                 "assistant",
                 mathResult
             );
+
 
             speak(mathResult);
 
@@ -303,33 +455,46 @@ async function sendMessage() {
 
 
         // ----------------------------------------------------
-        // THIRD: GEMINI BACKEND
+        // GEMINI
         // ----------------------------------------------------
 
-        const reply = await askBackend(message);
+        const reply =
+            await askBackend(message);
 
-        addMessage("JARVIS", reply);
+
+        addMessage(
+            "JARVIS",
+            reply
+        );
+
 
         saveConversationMessage(
             "assistant",
             reply
         );
 
+
         speak(reply);
+
 
     } catch (error) {
 
-        console.error("JARVIS backend error:", error);
+        console.error(
+            "JARVIS ERROR:",
+            error
+        );
+
 
         const errorMessage =
-            "I could not connect to the AI backend. Please check the AI backend connection.";
+            "AI backend connection failed. " +
+            "Please check the JARVIS backend.";
 
-        addMessage("JARVIS", errorMessage);
 
-        saveConversationMessage(
-            "assistant",
+        addMessage(
+            "JARVIS",
             errorMessage
         );
+
 
     } finally {
 
@@ -341,40 +506,43 @@ async function sendMessage() {
 
 
 // ============================================================
-// LOCAL COMMAND PROCESSOR
+// LOCAL COMMANDS
 // ============================================================
 
 function processLocalCommand(message) {
 
-    const command = message.toLowerCase().trim();
+    const command =
+        message.toLowerCase().trim();
 
 
-    // --------------------------------------------------------
     // TIME
-    // --------------------------------------------------------
-
     if (
         command === "time" ||
-        command.includes("what time is it") ||
-        command.includes("current time")
+        command.includes(
+            "what time is it"
+        ) ||
+        command.includes(
+            "current time"
+        )
     ) {
 
-        return "The current time is " +
-            new Date().toLocaleTimeString();
+        return (
+            "The current time is " +
+            new Date().toLocaleTimeString()
+        );
     }
 
 
-    // --------------------------------------------------------
     // DATE
-    // --------------------------------------------------------
-
     if (
         command === "date" ||
-        command.includes("today's date") ||
-        command.includes("what is today's date")
+        command.includes(
+            "today's date"
+        )
     ) {
 
-        return "Today's date is " +
+        return (
+            "Today's date is " +
             new Date().toLocaleDateString(
                 undefined,
                 {
@@ -383,17 +551,16 @@ function processLocalCommand(message) {
                     month: "long",
                     day: "numeric"
                 }
-            );
+            )
+        );
     }
 
 
-    // --------------------------------------------------------
-    // OPEN YOUTUBE
-    // --------------------------------------------------------
-
+    // YOUTUBE
     if (
-        command === "open youtube" ||
-        command.includes("open youtube")
+        command.includes(
+            "open youtube"
+        )
     ) {
 
         window.open(
@@ -405,13 +572,11 @@ function processLocalCommand(message) {
     }
 
 
-    // --------------------------------------------------------
-    // OPEN GOOGLE
-    // --------------------------------------------------------
-
+    // GOOGLE
     if (
-        command === "open google" ||
-        command.includes("open google")
+        command.includes(
+            "open google"
+        )
     ) {
 
         window.open(
@@ -423,13 +588,11 @@ function processLocalCommand(message) {
     }
 
 
-    // --------------------------------------------------------
-    // OPEN GMAIL
-    // --------------------------------------------------------
-
+    // GMAIL
     if (
-        command === "open gmail" ||
-        command.includes("open email")
+        command.includes(
+            "open gmail"
+        )
     ) {
 
         window.open(
@@ -441,13 +604,11 @@ function processLocalCommand(message) {
     }
 
 
-    // --------------------------------------------------------
-    // OPEN DRIVE
-    // --------------------------------------------------------
-
+    // DRIVE
     if (
-        command === "open drive" ||
-        command.includes("open google drive")
+        command.includes(
+            "open drive"
+        )
     ) {
 
         window.open(
@@ -459,13 +620,11 @@ function processLocalCommand(message) {
     }
 
 
-    // --------------------------------------------------------
-    // OPEN DOCS
-    // --------------------------------------------------------
-
+    // DOCS
     if (
-        command === "open docs" ||
-        command.includes("open google docs")
+        command.includes(
+            "open docs"
+        )
     ) {
 
         window.open(
@@ -477,13 +636,11 @@ function processLocalCommand(message) {
     }
 
 
-    // --------------------------------------------------------
-    // OPEN CALENDAR
-    // --------------------------------------------------------
-
+    // CALENDAR
     if (
-        command === "open calendar" ||
-        command.includes("open google calendar")
+        command.includes(
+            "open calendar"
+        )
     ) {
 
         window.open(
@@ -495,13 +652,11 @@ function processLocalCommand(message) {
     }
 
 
-    // --------------------------------------------------------
-    // OPEN MEET
-    // --------------------------------------------------------
-
+    // MEET
     if (
-        command === "open meet" ||
-        command.includes("open google meet")
+        command.includes(
+            "open meet"
+        )
     ) {
 
         window.open(
@@ -513,13 +668,12 @@ function processLocalCommand(message) {
     }
 
 
-    // --------------------------------------------------------
     // CALCULATOR
-    // --------------------------------------------------------
-
     if (
         command === "calculator" ||
-        command === "open calculator"
+        command.includes(
+            "open calculator"
+        )
     ) {
 
         window.open(
@@ -531,12 +685,11 @@ function processLocalCommand(message) {
     }
 
 
-    // --------------------------------------------------------
-    // STUDY TIMER
-    // --------------------------------------------------------
-
+    // START STUDY
     if (
-        command.includes("start study timer") ||
+        command.includes(
+            "start study timer"
+        ) ||
         command === "start studying"
     ) {
 
@@ -546,9 +699,11 @@ function processLocalCommand(message) {
     }
 
 
+    // PAUSE STUDY
     if (
-        command.includes("pause study timer") ||
-        command === "pause studying"
+        command.includes(
+            "pause study timer"
+        )
     ) {
 
         pauseStudyTimer();
@@ -557,8 +712,11 @@ function processLocalCommand(message) {
     }
 
 
+    // RESET STUDY
     if (
-        command.includes("reset study timer")
+        command.includes(
+            "reset study timer"
+        )
     ) {
 
         resetStudyTimer();
@@ -567,50 +725,83 @@ function processLocalCommand(message) {
     }
 
 
+    // STUDY TIME
     if (
-        command.includes("how long have i studied") ||
-        command.includes("study time")
+        command.includes(
+            "study time"
+        ) ||
+        command.includes(
+            "how long have i studied"
+        )
     ) {
 
-        return "Your current study time is " +
-            formatStudyTime(studySeconds) +
-            ".";
+        return (
+            "Your current study time is " +
+            formatStudyTime(
+                studySeconds
+            )
+        );
     }
 
 
-    // No local command
     return null;
 }
 
 
 // ============================================================
-// LOCAL MATH
+// SIMPLE MATH
 // ============================================================
 
 function processMath(message) {
 
-    const expression = message
-        .toLowerCase()
-        .replace(/what is/g, "")
-        .replace(/calculate/g, "")
-        .replace(/solve/g, "")
-        .replace(/\?/g, "")
-        .trim();
+    const expression =
+        message
+            .toLowerCase()
+            .replace(
+                /what is/g,
+                ""
+            )
+            .replace(
+                /calculate/g,
+                ""
+            )
+            .replace(
+                /solve/g,
+                ""
+            )
+            .replace(
+                /\?/g,
+                ""
+            )
+            .trim();
 
 
-    // Only process simple mathematical expressions.
-    if (!/^[0-9+\-*/().%\s^]+$/.test(expression)) {
+    if (
+        !/^[0-9+\-*/().%\s^]+$/
+            .test(expression)
+    ) {
+
         return null;
     }
 
-    if (!/[0-9]/.test(expression)) {
+
+    if (
+        !/[0-9]/
+            .test(expression)
+    ) {
+
         return null;
     }
+
 
     try {
 
         const safeExpression =
-            expression.replace(/\^/g, "**");
+            expression.replace(
+                /\^/g,
+                "**"
+            );
+
 
         const result =
             Function(
@@ -619,12 +810,17 @@ function processMath(message) {
                 ')'
             )();
 
+
         if (
             typeof result === "number" &&
             Number.isFinite(result)
         ) {
 
-            return "The answer is " + result + ".";
+            return (
+                "The answer is " +
+                result +
+                "."
+            );
         }
 
     } catch (error) {
@@ -632,12 +828,13 @@ function processMath(message) {
         return null;
     }
 
+
     return null;
 }
 
 
 // ============================================================
-// GEMINI BACKEND
+// ASK BACKEND
 // ============================================================
 
 async function askBackend(message) {
@@ -648,9 +845,15 @@ async function askBackend(message) {
         );
 
 
-    const params = new URLSearchParams();
+    const params =
+        new URLSearchParams();
 
-    params.set("message", message);
+
+    params.set(
+        "message",
+        message
+    );
+
 
     params.set(
         "history",
@@ -664,43 +867,50 @@ async function askBackend(message) {
         params.toString();
 
 
-    console.log("Connecting to JARVIS AI backend...");
-
-
-    const response = await fetch(
-        url,
-        {
-            method: "GET",
-            cache: "no-store",
-            redirect: "follow"
-        }
+    console.log(
+        "JARVIS connecting to backend..."
     );
+
+
+    const response =
+        await fetch(
+            url,
+            {
+                method: "GET",
+                cache: "no-store",
+                redirect: "follow"
+            }
+        );
 
 
     if (!response.ok) {
 
         throw new Error(
-            "Backend HTTP error: " +
+            "Backend HTTP " +
             response.status
         );
     }
 
 
-    const text =
+    const responseText =
         await response.text();
 
 
     console.log(
         "Backend response:",
-        text
+        responseText
     );
 
 
     let data;
 
+
     try {
 
-        data = JSON.parse(text);
+        data =
+            JSON.parse(
+                responseText
+            );
 
     } catch (error) {
 
@@ -714,7 +924,7 @@ async function askBackend(message) {
 
         throw new Error(
             data.error ||
-            "Gemini backend returned an error."
+            "Gemini backend error."
         );
     }
 
@@ -722,7 +932,7 @@ async function askBackend(message) {
     if (!data.reply) {
 
         throw new Error(
-            "Backend returned an empty reply."
+            "Empty AI response."
         );
     }
 
@@ -739,32 +949,32 @@ function showThinking(show) {
 
     if (!thinkingText) return;
 
+
     if (show) {
 
         thinkingText.textContent =
             "JARVIS IS THINKING...";
 
-        thinkingText.style.display = "block";
-
     } else {
 
         thinkingText.textContent =
             "SYSTEM READY";
-
-        thinkingText.style.display = "block";
     }
 }
 
 
 // ============================================================
-// SPEECH SYNTHESIS
+// VOICE OUTPUT
 // ============================================================
 
 function loadVoices() {
 
-    if (!("speechSynthesis" in window)) {
+    if (
+        !("speechSynthesis" in window)
+    ) {
 
         if (voiceStatus) {
+
             voiceStatus.textContent =
                 "VOICE: NOT SUPPORTED";
         }
@@ -776,27 +986,38 @@ function loadVoices() {
     function refreshVoices() {
 
         voices =
-            window.speechSynthesis.getVoices();
+            window.speechSynthesis
+                .getVoices();
 
 
         if (voiceSelect) {
 
-            voiceSelect.innerHTML = "";
+            voiceSelect.innerHTML =
+                "";
 
 
             voices.forEach(
-                (voice, index) => {
+                function(
+                    voice,
+                    index
+                ) {
 
                     const option =
-                        document.createElement("option");
+                        document.createElement(
+                            "option"
+                        );
 
-                    option.value = index;
+
+                    option.value =
+                        index;
+
 
                     option.textContent =
                         voice.name +
                         " (" +
                         voice.lang +
                         ")";
+
 
                     voiceSelect.appendChild(
                         option
@@ -805,19 +1026,19 @@ function loadVoices() {
             );
 
 
-            const savedVoice =
+            const saved =
                 localStorage.getItem(
                     "jarvisVoice"
                 );
 
 
             if (
-                savedVoice !== null &&
-                voices[savedVoice]
+                saved !== null &&
+                voices[saved]
             ) {
 
                 voiceSelect.value =
-                    savedVoice;
+                    saved;
             }
         }
 
@@ -832,7 +1053,9 @@ function loadVoices() {
 
     refreshVoices();
 
-    window.speechSynthesis.onvoiceschanged =
+
+    window.speechSynthesis
+        .onvoiceschanged =
         refreshVoices;
 }
 
@@ -843,7 +1066,9 @@ function loadVoices() {
 
 function speak(text) {
 
-    if (!("speechSynthesis" in window)) {
+    if (
+        !("speechSynthesis" in window)
+    ) {
         return;
     }
 
@@ -853,8 +1078,14 @@ function speak(text) {
 
     const cleanText =
         String(text)
-            .replace(/[*_#`]/g, "")
-            .replace(/\n+/g, ". ");
+            .replace(
+                /[*_#`]/g,
+                ""
+            )
+            .replace(
+                /\n+/g,
+                ". "
+            );
 
 
     const utterance =
@@ -866,55 +1097,51 @@ function speak(text) {
     utterance.rate =
         JARVIS_CONFIG.speechRate;
 
+
     utterance.pitch =
         JARVIS_CONFIG.speechPitch;
 
 
     if (
         voiceSelect &&
-        voices.length > 0
+        voices.length
     ) {
 
-        const selectedIndex =
+        const index =
             parseInt(
                 voiceSelect.value,
                 10
             );
 
 
-        if (voices[selectedIndex]) {
+        if (voices[index]) {
 
             utterance.voice =
-                voices[selectedIndex];
+                voices[index];
         }
     }
 
 
-    utterance.onstart = function () {
+    utterance.onstart =
+        function() {
 
-        if (voiceStatus) {
-            voiceStatus.textContent =
-                "VOICE: SPEAKING";
-        }
-    };
+            if (voiceStatus) {
 
-
-    utterance.onend = function () {
-
-        if (voiceStatus) {
-            voiceStatus.textContent =
-                "VOICE: READY";
-        }
-    };
+                voiceStatus.textContent =
+                    "VOICE: SPEAKING";
+            }
+        };
 
 
-    utterance.onerror = function () {
+    utterance.onend =
+        function() {
 
-        if (voiceStatus) {
-            voiceStatus.textContent =
-                "VOICE: ERROR";
-        }
-    };
+            if (voiceStatus) {
+
+                voiceStatus.textContent =
+                    "VOICE: READY";
+            }
+        };
 
 
     window.speechSynthesis.speak(
@@ -924,7 +1151,7 @@ function speak(text) {
 
 
 // ============================================================
-// STOP VOICE
+// STOP SPEAKING
 // ============================================================
 
 function stopSpeaking() {
@@ -961,7 +1188,7 @@ function setupSpeechRecognition() {
         if (voiceStatus) {
 
             voiceStatus.textContent =
-                "VOICE INPUT: NOT SUPPORTED";
+                "MIC: NOT SUPPORTED";
         }
 
         return;
@@ -972,102 +1199,118 @@ function setupSpeechRecognition() {
         new SpeechRecognition();
 
 
-    recognition.continuous = false;
-
-    recognition.interimResults = true;
-
-    recognition.lang = "en-IN";
+    recognition.continuous =
+        false;
 
 
-    recognition.onstart = function () {
+    recognition.interimResults =
+        true;
 
-        listening = true;
 
-        if (micButton) {
+    recognition.lang =
+        "en-IN";
 
-            micButton.classList.add(
-                "active"
+
+    recognition.onstart =
+        function() {
+
+            listening = true;
+
+
+            if (micButton) {
+
+                micButton.classList.add(
+                    "active"
+                );
+            }
+
+
+            if (voiceStatus) {
+
+                voiceStatus.textContent =
+                    "MIC: LISTENING";
+            }
+        };
+
+
+    recognition.onresult =
+        function(event) {
+
+            let text = "";
+
+
+            for (
+                let i =
+                    event.resultIndex;
+
+                i <
+                    event.results.length;
+
+                i++
+            ) {
+
+                text +=
+                    event.results[i][0]
+                        .transcript;
+            }
+
+
+            if (userInput) {
+
+                userInput.value =
+                    text;
+            }
+        };
+
+
+    recognition.onerror =
+        function(event) {
+
+            console.error(
+                "Microphone error:",
+                event.error
             );
-        }
 
 
-        if (voiceStatus) {
-
-            voiceStatus.textContent =
-                "MIC: LISTENING";
-        }
-    };
+            listening = false;
 
 
-    recognition.onresult = function (event) {
+            if (micButton) {
 
-        let finalText = "";
-
-        for (
-            let i = event.resultIndex;
-            i < event.results.length;
-            i++
-        ) {
-
-            finalText +=
-                event.results[i][0].transcript;
-        }
+                micButton.classList.remove(
+                    "active"
+                );
+            }
 
 
-        if (userInput) {
+            if (voiceStatus) {
 
-            userInput.value =
-                finalText;
-        }
-    };
-
-
-    recognition.onerror = function (event) {
-
-        console.error(
-            "Speech recognition error:",
-            event.error
-        );
+                voiceStatus.textContent =
+                    "MIC: ERROR";
+            }
+        };
 
 
-        listening = false;
+    recognition.onend =
+        function() {
+
+            listening = false;
 
 
-        if (micButton) {
+            if (micButton) {
 
-            micButton.classList.remove(
-                "active"
-            );
-        }
-
-
-        if (voiceStatus) {
-
-            voiceStatus.textContent =
-                "MIC: ERROR";
-        }
-    };
+                micButton.classList.remove(
+                    "active"
+                );
+            }
 
 
-    recognition.onend = function () {
+            if (voiceStatus) {
 
-        listening = false;
-
-
-        if (micButton) {
-
-            micButton.classList.remove(
-                "active"
-            );
-        }
-
-
-        if (voiceStatus) {
-
-            voiceStatus.textContent =
-                "VOICE: READY";
-        }
-    };
+                voiceStatus.textContent =
+                    "VOICE: READY";
+            }
+        };
 }
 
 
@@ -1081,7 +1324,7 @@ function toggleMicrophone() {
 
         addMessage(
             "JARVIS",
-            "Voice input is not supported by this browser."
+            "Voice input is not supported in this browser."
         );
 
         return;
@@ -1107,7 +1350,7 @@ function toggleMicrophone() {
 
 
 // ============================================================
-// CONVERSATION MEMORY
+// MEMORY
 // ============================================================
 
 function saveConversationMessage(
@@ -1116,8 +1359,11 @@ function saveConversationMessage(
 ) {
 
     conversationHistory.push({
+
         role: role,
+
         content: content,
+
         timestamp: Date.now()
     });
 
@@ -1150,10 +1396,6 @@ function saveConversationMessage(
 }
 
 
-// ============================================================
-// LOAD MEMORY
-// ============================================================
-
 function loadConversation() {
 
     try {
@@ -1179,18 +1421,13 @@ function loadConversation() {
 
     } catch (error) {
 
-        console.error(
-            "Memory load error:",
-            error
-        );
-
         conversationHistory = [];
     }
 }
 
 
 // ============================================================
-// NETWORK STATUS
+// NETWORK
 // ============================================================
 
 function updateNetworkStatus() {
@@ -1200,25 +1437,21 @@ function updateNetworkStatus() {
 
     function update() {
 
-        if (navigator.onLine) {
-
-            networkStatus.textContent =
-                "NETWORK: ONLINE";
-
-        } else {
-
-            networkStatus.textContent =
-                "NETWORK: OFFLINE";
-        }
+        networkStatus.textContent =
+            navigator.onLine
+                ? "NETWORK: ONLINE"
+                : "NETWORK: OFFLINE";
     }
 
 
     update();
 
+
     window.addEventListener(
         "online",
         update
     );
+
 
     window.addEventListener(
         "offline",
@@ -1236,11 +1469,8 @@ function updateClock() {
     if (!footerTime) return;
 
 
-    const now = new Date();
-
-
     footerTime.textContent =
-        now.toLocaleString(
+        new Date().toLocaleString(
             undefined,
             {
                 weekday: "short",
@@ -1268,7 +1498,7 @@ function startStudyTimer() {
 
     studyInterval =
         setInterval(
-            function () {
+            function() {
 
                 studySeconds++;
 
@@ -1324,12 +1554,16 @@ function updateStudyTimer() {
 function formatStudyTime(seconds) {
 
     const hours =
-        Math.floor(seconds / 3600);
+        Math.floor(
+            seconds / 3600
+        );
+
 
     const minutes =
         Math.floor(
             (seconds % 3600) / 60
         );
+
 
     const secs =
         seconds % 60;
@@ -1365,7 +1599,10 @@ function loadStudyTime() {
     if (saved) {
 
         studySeconds =
-            parseInt(saved, 10) || 0;
+            parseInt(
+                saved,
+                10
+            ) || 0;
     }
 
 
@@ -1374,7 +1611,7 @@ function loadStudyTime() {
 
 
 // ============================================================
-// BACKEND CONNECTION TEST
+// BACKEND STATUS
 // ============================================================
 
 async function testBackendConnection() {
@@ -1384,10 +1621,12 @@ async function testBackendConnection() {
         const params =
             new URLSearchParams();
 
+
         params.set(
             "message",
             "hello"
         );
+
 
         params.set(
             "history",
@@ -1402,7 +1641,8 @@ async function testBackendConnection() {
                 params.toString(),
                 {
                     method: "GET",
-                    cache: "no-store"
+                    cache: "no-store",
+                    redirect: "follow"
                 }
             );
 
@@ -1426,14 +1666,23 @@ async function testBackendConnection() {
         ) {
 
             if (aiStatus) {
+
                 aiStatus.textContent =
                     "AI: ONLINE";
             }
 
+
             if (aiStatus2) {
+
                 aiStatus2.textContent =
                     "GEMINI: CONNECTED";
             }
+
+
+            console.log(
+                "JARVIS AI backend ONLINE."
+            );
+
 
             return true;
         }
@@ -1447,17 +1696,20 @@ async function testBackendConnection() {
     } catch (error) {
 
         console.error(
-            "Backend connection test failed:",
+            "Backend connection failed:",
             error
         );
 
 
         if (aiStatus) {
+
             aiStatus.textContent =
-                "AI: ERROR";
+                "AI: OFFLINE";
         }
 
+
         if (aiStatus2) {
+
             aiStatus2.textContent =
                 "GEMINI: OFFLINE";
         }
@@ -1472,7 +1724,8 @@ async function testBackendConnection() {
 // GLOBAL FUNCTIONS
 // ============================================================
 
-window.sendMessage = sendMessage;
+window.sendMessage =
+    sendMessage;
 
 window.toggleMicrophone =
     toggleMicrophone;
@@ -1491,21 +1744,19 @@ window.resetStudyTimer =
 
 
 // ============================================================
-// START JARVIS
+// START
 // ============================================================
 
 document.addEventListener(
     "DOMContentLoaded",
-    function () {
-
-        loadStudyTime();
+    function() {
 
         initializeJarvis();
 
-        // Test backend after page loads.
+
         setTimeout(
             testBackendConnection,
-            1200
+            1500
         );
     }
 );
