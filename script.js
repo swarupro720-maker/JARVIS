@@ -1,1691 +1,1511 @@
-/* =====================================================
-   JARVIS 2
-   AI + VOICE + MEMORY + STUDY MANAGER
-===================================================== */
-
-
-/* =====================================================
-   CONFIGURATION
-===================================================== */
+// ============================================================
+// JARVIS 2 — COMPLETE FRONTEND JAVASCRIPT
+// Google Apps Script + Gemini Backend
+// ============================================================
 
 const JARVIS_CONFIG = {
+    backendUrl:
+        "https://script.google.com/macros/s/AKfycbxIPKL1eu31w1iFje-fz8KqEhy_TipDzqokW-OsbrwrrlBbDgQdP_xrlyBJnYcuZu80/exec",
 
-  name: "JARVIS 2",
-
-  version: "2.0",
-
-  backendUrl:
-    "https://script.google.com/macros/s/AKfycbxokIIF58cvABj-3oXI7GD6jkGH05R3eAkaD4o3TcJ__iS7nzCzQJWivcfc_WqUuGhD/exec",
-
-  language: "en-US"
-
+    assistantName: "JARVIS 2",
+    maxHistory: 12,
+    speechRate: 1.0,
+    speechPitch: 1.0
 };
 
 
-/* =====================================================
-   DOM ELEMENTS
-===================================================== */
+// ============================================================
+// DOM ELEMENTS
+// ============================================================
 
-const userInput =
-  document.getElementById("userInput");
+const userInput = document.getElementById("userInput");
+const sendButton = document.getElementById("sendButton");
+const micButton = document.getElementById("micButton");
+const stopButton = document.getElementById("stopButton");
 
-const sendButton =
-  document.getElementById("sendButton");
+const chatMessages = document.getElementById("chatMessages");
+const thinkingText = document.getElementById("thinkingText");
 
-const micButton =
-  document.getElementById("micButton");
+const voiceSelect = document.getElementById("voiceSelect");
+const speedSlider = document.getElementById("speed");
+const speedValue = document.getElementById("speedValue");
 
-const stopButton =
-  document.getElementById("stopButton");
+const networkStatus = document.getElementById("networkStatus");
+const voiceStatus = document.getElementById("voiceStatus");
+const aiStatus = document.getElementById("aiStatus");
+const aiStatus2 = document.getElementById("aiStatus2");
+const memoryStatus = document.getElementById("memoryStatus");
 
-const chatBox =
-  document.getElementById("chatBox");
+const studyTimerDisplay = document.getElementById("studyTimer");
+const startStudyButton = document.getElementById("startStudy");
+const pauseStudyButton = document.getElementById("pauseStudy");
+const resetStudyButton = document.getElementById("resetStudy");
 
-const thinkingText =
-  document.getElementById("thinkingText");
-
-const voiceSelect =
-  document.getElementById("voiceSelect");
-
-const speed =
-  document.getElementById("speed");
-
-const speedValue =
-  document.getElementById("speedValue");
-
-const voiceStatus =
-  document.getElementById("voiceStatus");
-
-const networkStatus =
-  document.getElementById("networkStatus");
-
-const memoryStatus =
-  document.getElementById("memoryStatus");
-
-const aiStatus =
-  document.getElementById("aiStatus");
-
-const aiStatus2 =
-  document.getElementById("aiStatus2");
-
-const footerTime =
-  document.getElementById("footerTime");
-
-const studyTimer =
-  document.getElementById("studyTimer");
-
-const startStudy =
-  document.getElementById("startStudy");
-
-const pauseStudy =
-  document.getElementById("pauseStudy");
-
-const resetStudy =
-  document.getElementById("resetStudy");
+const footerTime = document.getElementById("footerTime");
 
 
-/* =====================================================
-   STATE
-===================================================== */
+// ============================================================
+// STATE
+// ============================================================
 
 let conversationHistory = [];
 
 let voices = [];
-
 let recognition = null;
-
-let isListening = false;
-
-let isSpeaking = false;
-
-
-/* =====================================================
-   STUDY TIMER
-===================================================== */
+let listening = false;
 
 let studySeconds = 0;
-
-let studyRunning = false;
-
 let studyInterval = null;
 
+let isProcessing = false;
 
-/* =====================================================
-   INITIALIZE
-===================================================== */
+
+// ============================================================
+// INITIALIZATION
+// ============================================================
 
 function initializeJarvis() {
 
-  loadMemory();
+    loadConversation();
 
-  loadVoices();
+    loadVoices();
 
-  setupSpeechRecognition();
+    setupSpeechRecognition();
 
-  setupEvents();
+    setupEventListeners();
 
-  updateNetworkStatus();
+    updateNetworkStatus();
 
-  updateClock();
+    updateClock();
 
-  loadStudyTime();
+    setInterval(updateClock, 1000);
 
-  updateStudyDisplay();
+    updateStudyTimer();
 
-  console.log(
-    "JARVIS 2 ONLINE"
-  );
+    addStartupMessage();
 
+    console.log("JARVIS 2 initialized.");
 }
 
 
-/* =====================================================
-   EVENTS
-===================================================== */
+// ============================================================
+// STARTUP MESSAGE
+// ============================================================
 
-function setupEvents() {
+function addStartupMessage() {
 
-  if (sendButton) {
+    if (chatMessages && chatMessages.children.length > 0) {
+        return;
+    }
 
-    sendButton.addEventListener(
-      "click",
-      sendMessage
+    addMessage(
+        "JARVIS",
+        "Systems online. AI backend connection ready. How can I help you?"
     );
-
-  }
-
-
-  if (userInput) {
-
-    userInput.addEventListener(
-      "keydown",
-      function(event) {
-
-        if (event.key === "Enter") {
-
-          event.preventDefault();
-
-          sendMessage();
-
-        }
-
-      }
-    );
-
-  }
-
-
-  if (micButton) {
-
-    micButton.addEventListener(
-      "click",
-      toggleMicrophone
-    );
-
-  }
-
-
-  if (stopButton) {
-
-    stopButton.addEventListener(
-      "click",
-      stopVoice
-    );
-
-  }
-
-
-  if (speed) {
-
-    speed.addEventListener(
-      "input",
-      function() {
-
-        speedValue.textContent =
-          Number(speed.value).toFixed(2) +
-          "x";
-
-      }
-    );
-
-  }
-
-
-  if (startStudy) {
-
-    startStudy.addEventListener(
-      "click",
-      startStudyTimer
-    );
-
-  }
-
-
-  if (pauseStudy) {
-
-    pauseStudy.addEventListener(
-      "click",
-      pauseStudyTimer
-    );
-
-  }
-
-
-  if (resetStudy) {
-
-    resetStudy.addEventListener(
-      "click",
-      resetStudyTimer
-    );
-
-  }
-
 }
 
 
-/* =====================================================
-   CHAT MESSAGE
-===================================================== */
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
 
-function addMessage(
-  sender,
-  message
-) {
+function setupEventListeners() {
 
-  if (!chatBox) {
-    return;
-  }
+    if (sendButton) {
+        sendButton.addEventListener("click", sendMessage);
+    }
 
+    if (userInput) {
 
-  const messageElement =
-    document.createElement("div");
+        userInput.addEventListener("keydown", function (event) {
 
+            if (event.key === "Enter" && !event.shiftKey) {
 
-  messageElement.className =
-    "message " +
-    (
-      sender === "USER"
-        ? "user-message"
-        : "jarvis-message"
-    );
+                event.preventDefault();
 
+                sendMessage();
+            }
+        });
+    }
 
-  const label =
-    document.createElement("div");
+    if (micButton) {
+        micButton.addEventListener("click", toggleMicrophone);
+    }
 
+    if (stopButton) {
+        stopButton.addEventListener("click", stopSpeaking);
+    }
 
-  label.className =
-    "message-label";
+    if (speedSlider) {
 
+        speedSlider.addEventListener("input", function () {
 
-  label.textContent =
-    sender;
+            const value = parseFloat(speedSlider.value);
 
+            JARVIS_CONFIG.speechRate = value;
 
-  const content =
-    document.createElement("div");
+            if (speedValue) {
+                speedValue.textContent = value.toFixed(1) + "x";
+            }
+        });
+    }
 
+    if (voiceSelect) {
 
-  content.textContent =
-    message;
+        voiceSelect.addEventListener("change", function () {
 
+            localStorage.setItem(
+                "jarvisVoice",
+                voiceSelect.value
+            );
+        });
+    }
 
-  messageElement.appendChild(
-    label
-  );
+    if (startStudyButton) {
+        startStudyButton.addEventListener(
+            "click",
+            startStudyTimer
+        );
+    }
 
+    if (pauseStudyButton) {
+        pauseStudyButton.addEventListener(
+            "click",
+            pauseStudyTimer
+        );
+    }
 
-  messageElement.appendChild(
-    content
-  );
+    if (resetStudyButton) {
+        resetStudyButton.addEventListener(
+            "click",
+            resetStudyTimer
+        );
+    }
 
+    document.querySelectorAll("[data-command]").forEach(button => {
 
-  chatBox.appendChild(
-    messageElement
-  );
+        button.addEventListener("click", function () {
 
+            const command = this.dataset.command;
 
-  chatBox.scrollTop =
-    chatBox.scrollHeight;
-
+            if (command) {
+                userInput.value = command;
+                sendMessage();
+            }
+        });
+    });
 }
 
 
-/* =====================================================
-   THINKING STATUS
-===================================================== */
+// ============================================================
+// CHAT MESSAGE DISPLAY
+// ============================================================
 
-function setThinking(
-  message
-) {
+function addMessage(sender, message, type = "normal") {
 
-  if (thinkingText) {
+    if (!chatMessages) return;
 
-    thinkingText.textContent =
-      message;
+    const messageContainer = document.createElement("div");
 
-  }
+    messageContainer.className =
+        "chat-message " +
+        (sender === "USER" ? "user-message" : "jarvis-message");
 
+    const senderElement = document.createElement("div");
+
+    senderElement.className = "message-sender";
+
+    senderElement.textContent = sender;
+
+    const messageElement = document.createElement("div");
+
+    messageElement.className = "message-text";
+
+    messageElement.textContent = message;
+
+    messageContainer.appendChild(senderElement);
+    messageContainer.appendChild(messageElement);
+
+    chatMessages.appendChild(messageContainer);
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    return messageContainer;
 }
 
 
-/* =====================================================
-   SEND MESSAGE
-===================================================== */
+// ============================================================
+// SEND MESSAGE
+// ============================================================
 
 async function sendMessage() {
 
-  const message =
-    userInput.value.trim();
+    if (isProcessing) return;
 
+    if (!userInput) return;
 
-  if (!message) {
+    const message = userInput.value.trim();
 
-    return;
+    if (!message) return;
 
-  }
+    isProcessing = true;
 
+    userInput.value = "";
 
-  userInput.value = "";
+    addMessage("USER", message);
 
+    saveConversationMessage("user", message);
 
-  addMessage(
-    "USER",
-    message
-  );
+    showThinking(true);
 
+    try {
 
-  conversationHistory.push({
+        // ----------------------------------------------------
+        // FIRST: LOCAL COMMANDS
+        // ----------------------------------------------------
 
-    role: "user",
+        const localResult = processLocalCommand(message);
 
-    content: message
+        if (localResult !== null) {
 
-  });
+            addMessage("JARVIS", localResult);
 
+            saveConversationMessage(
+                "assistant",
+                localResult
+            );
 
-  saveMemory();
+            speak(localResult);
 
-
-  setThinking(
-    "JARVIS is thinking..."
-  );
-
-
-  try {
-
-    const response =
-      await processCommand(
-        message
-      );
-
-
-    addMessage(
-      "JARVIS",
-      response
-    );
-
-
-    conversationHistory.push({
-
-      role: "assistant",
-
-      content: response
-
-    });
-
-
-    saveMemory();
-
-
-    setThinking(
-      "JARVIS is ready."
-    );
-
-
-    speak(response);
-
-  }
-
-  catch (error) {
-
-    console.error(
-      "JARVIS ERROR:",
-      error
-    );
-
-
-    const errorMessage =
-      "I encountered an error while processing that request. " +
-      "Please check the AI backend connection.";
-
-
-    addMessage(
-      "JARVIS",
-      errorMessage
-    );
-
-
-    setThinking(
-      "Connection error."
-    );
-
-
-    speak(
-      errorMessage
-    );
-
-  }
-
-}
-
-
-/* =====================================================
-   COMMAND PROCESSOR
-===================================================== */
-
-async function processCommand(
-  message
-) {
-
-  const text =
-    message
-      .toLowerCase()
-      .trim();
-
-
-  /* =================================================
-     BASIC COMMANDS
-  ================================================= */
-
-
-  if (
-    text === "hello" ||
-    text === "hi" ||
-    text.includes("hello jarvis") ||
-    text.includes("hi jarvis")
-  ) {
-
-    return (
-      "Hello. JARVIS 2 is online and ready."
-    );
-
-  }
-
-
-  if (
-    text.includes("who are you") ||
-    text.includes("what are you")
-  ) {
-
-    return (
-      "I am JARVIS 2, your personal AI assistant. " +
-      "My AI brain is connected to the Gemini backend."
-    );
-
-  }
-
-
-  /* =================================================
-     TIME
-  ================================================= */
-
-  if (
-    text === "time" ||
-    text.includes("what time") ||
-    text.includes("current time")
-  ) {
-
-    return (
-      "The current time is " +
-      new Date().toLocaleTimeString()
-    );
-
-  }
-
-
-  /* =================================================
-     DATE
-  ================================================= */
-
-  if (
-    text.includes("what date") ||
-    text === "date" ||
-    text.includes("today's date")
-  ) {
-
-    return (
-      "Today is " +
-      new Date().toLocaleDateString(
-        undefined,
-        {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric"
+            return;
         }
-      )
-    );
 
-  }
 
+        // ----------------------------------------------------
+        // SECOND: LOCAL MATH
+        // ----------------------------------------------------
 
-  /* =================================================
-     STATUS
-  ================================================= */
+        const mathResult = processMath(message);
 
-  if (
-    text.includes("status")
-  ) {
+        if (mathResult !== null) {
 
-    return (
-      "JARVIS 2 is online. " +
-      "The Gemini AI backend is configured. " +
-      "Voice input, voice output and local memory are available."
-    );
+            addMessage("JARVIS", mathResult);
 
-  }
+            saveConversationMessage(
+                "assistant",
+                mathResult
+            );
 
+            speak(mathResult);
 
-  /* =================================================
-     HELP
-  ================================================= */
+            return;
+        }
 
-  if (
-    text === "help" ||
-    text.includes("what can you do")
-  ) {
 
-    return (
-      "I can answer questions using my AI backend, " +
-      "speak responses, listen through your microphone, " +
-      "open supported websites, remember conversations " +
-      "and track your study time."
-    );
+        // ----------------------------------------------------
+        // THIRD: GEMINI BACKEND
+        // ----------------------------------------------------
 
-  }
+        const reply = await askBackend(message);
 
+        addMessage("JARVIS", reply);
 
-  /* =================================================
-     WEBSITE COMMANDS
-  ================================================= */
+        saveConversationMessage(
+            "assistant",
+            reply
+        );
 
-  if (
-    text.includes("open youtube")
-  ) {
+        speak(reply);
 
-    openWebApp(
-      "https://www.youtube.com"
-    );
+    } catch (error) {
 
-    return "Opening YouTube.";
+        console.error("JARVIS backend error:", error);
 
-  }
+        const errorMessage =
+            "I could not connect to the AI backend. Please check the AI backend connection.";
 
+        addMessage("JARVIS", errorMessage);
 
-  if (
-    text.includes("open gmail") ||
-    text.includes("open mail")
-  ) {
+        saveConversationMessage(
+            "assistant",
+            errorMessage
+        );
 
-    openWebApp(
-      "https://mail.google.com"
-    );
+    } finally {
 
-    return "Opening Gmail.";
+        showThinking(false);
 
-  }
-
-
-  if (
-    text.includes("open drive")
-  ) {
-
-    openWebApp(
-      "https://drive.google.com"
-    );
-
-    return "Opening Google Drive.";
-
-  }
-
-
-  if (
-    text.includes("open google")
-  ) {
-
-    openWebApp(
-      "https://www.google.com"
-    );
-
-    return "Opening Google.";
-
-  }
-
-
-  if (
-    text.includes("open docs")
-  ) {
-
-    openWebApp(
-      "https://docs.google.com"
-    );
-
-    return "Opening Google Docs.";
-
-  }
-
-
-  if (
-    text.includes("open calendar")
-  ) {
-
-    openWebApp(
-      "https://calendar.google.com"
-    );
-
-    return "Opening Google Calendar.";
-
-  }
-
-
-  if (
-    text.includes("open meet")
-  ) {
-
-    openWebApp(
-      "https://meet.google.com"
-    );
-
-    return "Opening Google Meet.";
-
-  }
-
-
-  if (
-    text.includes("open calculator")
-  ) {
-
-    openWebApp(
-      "https://www.google.com/search?q=calculator"
-    );
-
-    return "Opening calculator.";
-
-  }
-
-
-  /* =================================================
-     STUDY COMMANDS
-  ================================================= */
-
-  if (
-    text.includes("start studying") ||
-    text.includes("start study")
-  ) {
-
-    startStudyTimer();
-
-    return "Study timer started.";
-
-  }
-
-
-  if (
-    text.includes("stop studying") ||
-    text.includes("pause study")
-  ) {
-
-    pauseStudyTimer();
-
-    return "Study timer paused.";
-
-  }
-
-
-  if (
-    text.includes("study time")
-  ) {
-
-    return (
-      "Your study time today is " +
-      formatStudyTime(
-        studySeconds
-      )
-    );
-
-  }
-
-
-  /* =================================================
-     LOCAL MATH
-  ================================================= */
-
-  if (
-    looksLikeMath(text)
-  ) {
-
-    const result =
-      calculateSimpleMath(text);
-
-
-    if (result !== null) {
-
-      return (
-        "The answer is " +
-        result
-      );
-
+        isProcessing = false;
     }
-
-  }
-
-
-  /* =================================================
-     GEMINI AI
-  ================================================= */
-
-  return await askBackend(
-    message
-  );
-
 }
 
 
-/* =====================================================
-   GEMINI BACKEND CONNECTION
-===================================================== */
+// ============================================================
+// LOCAL COMMAND PROCESSOR
+// ============================================================
 
-async function askBackend(
-  message
-) {
+function processLocalCommand(message) {
 
-  const history =
-    conversationHistory
-      .slice(-12);
+    const command = message.toLowerCase().trim();
 
 
-  const params =
-    new URLSearchParams();
+    // --------------------------------------------------------
+    // TIME
+    // --------------------------------------------------------
 
+    if (
+        command === "time" ||
+        command.includes("what time is it") ||
+        command.includes("current time")
+    ) {
 
-  params.set(
-    "message",
-    message
-  );
-
-
-  params.set(
-    "history",
-    JSON.stringify(history)
-  );
-
-
-  const url =
-    JARVIS_CONFIG.backendUrl +
-    "?" +
-    params.toString();
-
-
-  console.log(
-    "Sending request to JARVIS AI backend..."
-  );
-
-
-  const response =
-    await fetch(
-      url,
-      {
-        method: "GET",
-        cache: "no-store"
-      }
-    );
-
-
-  if (!response.ok) {
-
-    throw new Error(
-      "Backend HTTP error: " +
-      response.status
-    );
-
-  }
-
-
-  const data =
-    await response.json();
-
-
-  console.log(
-    "Backend response:",
-    data
-  );
-
-
-  if (!data.success) {
-
-    throw new Error(
-      data.error ||
-      "Backend returned an error."
-    );
-
-  }
-
-
-  if (
-    !data.reply ||
-    !data.reply.trim()
-  ) {
-
-    throw new Error(
-      "Backend returned an empty answer."
-    );
-
-  }
-
-
-  return data.reply;
-
-}
-
-
-/* =====================================================
-   MATH
-===================================================== */
-
-function looksLikeMath(
-  text
-) {
-
-  return /^[0-9+\-*/().%\s]+$/.test(
-    text
-  );
-
-}
-
-
-function calculateSimpleMath(
-  text
-) {
-
-  try {
-
-    if (!looksLikeMath(text)) {
-
-      return null;
-
+        return "The current time is " +
+            new Date().toLocaleTimeString();
     }
 
 
-    const result =
-      Function(
-        '"use strict"; return (' +
-        text +
-        ')'
-      )();
+    // --------------------------------------------------------
+    // DATE
+    // --------------------------------------------------------
+
+    if (
+        command === "date" ||
+        command.includes("today's date") ||
+        command.includes("what is today's date")
+    ) {
+
+        return "Today's date is " +
+            new Date().toLocaleDateString(
+                undefined,
+                {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric"
+                }
+            );
+    }
+
+
+    // --------------------------------------------------------
+    // OPEN YOUTUBE
+    // --------------------------------------------------------
+
+    if (
+        command === "open youtube" ||
+        command.includes("open youtube")
+    ) {
+
+        window.open(
+            "https://www.youtube.com",
+            "_blank"
+        );
+
+        return "Opening YouTube.";
+    }
+
+
+    // --------------------------------------------------------
+    // OPEN GOOGLE
+    // --------------------------------------------------------
+
+    if (
+        command === "open google" ||
+        command.includes("open google")
+    ) {
+
+        window.open(
+            "https://www.google.com",
+            "_blank"
+        );
+
+        return "Opening Google.";
+    }
+
+
+    // --------------------------------------------------------
+    // OPEN GMAIL
+    // --------------------------------------------------------
+
+    if (
+        command === "open gmail" ||
+        command.includes("open email")
+    ) {
+
+        window.open(
+            "https://mail.google.com",
+            "_blank"
+        );
+
+        return "Opening Gmail.";
+    }
+
+
+    // --------------------------------------------------------
+    // OPEN DRIVE
+    // --------------------------------------------------------
+
+    if (
+        command === "open drive" ||
+        command.includes("open google drive")
+    ) {
+
+        window.open(
+            "https://drive.google.com",
+            "_blank"
+        );
+
+        return "Opening Google Drive.";
+    }
+
+
+    // --------------------------------------------------------
+    // OPEN DOCS
+    // --------------------------------------------------------
+
+    if (
+        command === "open docs" ||
+        command.includes("open google docs")
+    ) {
+
+        window.open(
+            "https://docs.google.com",
+            "_blank"
+        );
+
+        return "Opening Google Docs.";
+    }
+
+
+    // --------------------------------------------------------
+    // OPEN CALENDAR
+    // --------------------------------------------------------
+
+    if (
+        command === "open calendar" ||
+        command.includes("open google calendar")
+    ) {
+
+        window.open(
+            "https://calendar.google.com",
+            "_blank"
+        );
+
+        return "Opening Google Calendar.";
+    }
+
+
+    // --------------------------------------------------------
+    // OPEN MEET
+    // --------------------------------------------------------
+
+    if (
+        command === "open meet" ||
+        command.includes("open google meet")
+    ) {
+
+        window.open(
+            "https://meet.google.com",
+            "_blank"
+        );
+
+        return "Opening Google Meet.";
+    }
+
+
+    // --------------------------------------------------------
+    // CALCULATOR
+    // --------------------------------------------------------
+
+    if (
+        command === "calculator" ||
+        command === "open calculator"
+    ) {
+
+        window.open(
+            "https://www.google.com/search?q=calculator",
+            "_blank"
+        );
+
+        return "Opening calculator.";
+    }
+
+
+    // --------------------------------------------------------
+    // STUDY TIMER
+    // --------------------------------------------------------
+
+    if (
+        command.includes("start study timer") ||
+        command === "start studying"
+    ) {
+
+        startStudyTimer();
+
+        return "Study timer started.";
+    }
 
 
     if (
-      typeof result === "number" &&
-      Number.isFinite(result)
+        command.includes("pause study timer") ||
+        command === "pause studying"
     ) {
 
-      return result;
+        pauseStudyTimer();
 
+        return "Study timer paused.";
     }
 
-  }
 
-  catch (error) {
+    if (
+        command.includes("reset study timer")
+    ) {
+
+        resetStudyTimer();
+
+        return "Study timer reset.";
+    }
+
+
+    if (
+        command.includes("how long have i studied") ||
+        command.includes("study time")
+    ) {
+
+        return "Your current study time is " +
+            formatStudyTime(studySeconds) +
+            ".";
+    }
+
+
+    // No local command
+    return null;
+}
+
+
+// ============================================================
+// LOCAL MATH
+// ============================================================
+
+function processMath(message) {
+
+    const expression = message
+        .toLowerCase()
+        .replace(/what is/g, "")
+        .replace(/calculate/g, "")
+        .replace(/solve/g, "")
+        .replace(/\?/g, "")
+        .trim();
+
+
+    // Only process simple mathematical expressions.
+    if (!/^[0-9+\-*/().%\s^]+$/.test(expression)) {
+        return null;
+    }
+
+    if (!/[0-9]/.test(expression)) {
+        return null;
+    }
+
+    try {
+
+        const safeExpression =
+            expression.replace(/\^/g, "**");
+
+        const result =
+            Function(
+                '"use strict"; return (' +
+                safeExpression +
+                ')'
+            )();
+
+        if (
+            typeof result === "number" &&
+            Number.isFinite(result)
+        ) {
+
+            return "The answer is " + result + ".";
+        }
+
+    } catch (error) {
+
+        return null;
+    }
 
     return null;
-
-  }
-
-
-  return null;
-
 }
 
 
-/* =====================================================
-   OPEN WEBSITE
-===================================================== */
+// ============================================================
+// GEMINI BACKEND
+// ============================================================
 
-function openWebApp(
-  url
-) {
+async function askBackend(message) {
 
-  window.open(
-    url,
-    "_blank",
-    "noopener,noreferrer"
-  );
-
-}
-
-
-/* =====================================================
-   VOICE OUTPUT
-===================================================== */
-
-function loadVoices() {
-
-  if (
-    !("speechSynthesis" in window)
-  ) {
-
-    if (voiceStatus) {
-
-      voiceStatus.textContent =
-        "UNAVAILABLE";
-
-    }
-
-    return;
-
-  }
-
-
-  voices =
-    window.speechSynthesis
-      .getVoices();
-
-
-  if (!voiceSelect) {
-    return;
-  }
-
-
-  voiceSelect.innerHTML =
-    '<option value="">Default voice</option>';
-
-
-  voices.forEach(
-    function(
-      voice,
-      index
-    ) {
-
-      const option =
-        document.createElement(
-          "option"
+    const history =
+        conversationHistory.slice(
+            -JARVIS_CONFIG.maxHistory
         );
 
 
-      option.value =
-        index;
+    const params = new URLSearchParams();
 
+    params.set("message", message);
 
-      option.textContent =
-        voice.name +
-        " — " +
-        voice.lang;
-
-
-      voiceSelect.appendChild(
-        option
-      );
-
-    }
-  );
-
-}
-
-
-if (
-  "speechSynthesis" in window
-) {
-
-  window.speechSynthesis
-    .onvoiceschanged =
-      loadVoices;
-
-}
-
-
-function speak(
-  text
-) {
-
-  if (
-    !("speechSynthesis" in window)
-  ) {
-
-    return;
-
-  }
-
-
-  stopVoice();
-
-
-  const utterance =
-    new SpeechSynthesisUtterance(
-      text
+    params.set(
+        "history",
+        JSON.stringify(history)
     );
 
 
-  utterance.rate =
-    speed
-      ? Number(speed.value)
-      : 1;
+    const url =
+        JARVIS_CONFIG.backendUrl +
+        "?" +
+        params.toString();
 
 
-  utterance.pitch =
-    0.85;
+    console.log("Connecting to JARVIS AI backend...");
 
 
-  utterance.lang =
-    JARVIS_CONFIG.language;
+    const response = await fetch(
+        url,
+        {
+            method: "GET",
+            cache: "no-store",
+            redirect: "follow"
+        }
+    );
 
 
-  if (
-    voiceSelect &&
-    voiceSelect.value !== ""
-  ) {
+    if (!response.ok) {
 
-    const selectedVoice =
-      voices[
-        Number(
-          voiceSelect.value
-        )
-      ];
-
-
-    if (selectedVoice) {
-
-      utterance.voice =
-        selectedVoice;
-
+        throw new Error(
+            "Backend HTTP error: " +
+            response.status
+        );
     }
 
-  }
+
+    const text =
+        await response.text();
 
 
-  utterance.onstart =
-    function() {
-
-      isSpeaking = true;
-
-
-      if (voiceStatus) {
-
-        voiceStatus.textContent =
-          "SPEAKING";
-
-      }
-
-    };
+    console.log(
+        "Backend response:",
+        text
+    );
 
 
-  utterance.onend =
-    function() {
+    let data;
 
-      isSpeaking = false;
+    try {
 
+        data = JSON.parse(text);
 
-      if (voiceStatus) {
+    } catch (error) {
 
-        voiceStatus.textContent =
-          "READY";
-
-      }
-
-    };
+        throw new Error(
+            "Backend returned invalid JSON."
+        );
+    }
 
 
-  utterance.onerror =
-    function() {
+    if (!data.success) {
 
-      isSpeaking = false;
-
-
-      if (voiceStatus) {
-
-        voiceStatus.textContent =
-          "READY";
-
-      }
-
-    };
+        throw new Error(
+            data.error ||
+            "Gemini backend returned an error."
+        );
+    }
 
 
-  window.speechSynthesis.speak(
-    utterance
-  );
+    if (!data.reply) {
 
+        throw new Error(
+            "Backend returned an empty reply."
+        );
+    }
+
+
+    return data.reply;
 }
 
 
-/* =====================================================
-   STOP VOICE
-===================================================== */
+// ============================================================
+// THINKING STATUS
+// ============================================================
 
-function stopVoice() {
+function showThinking(show) {
 
-  if (
-    "speechSynthesis" in window
-  ) {
+    if (!thinkingText) return;
+
+    if (show) {
+
+        thinkingText.textContent =
+            "JARVIS IS THINKING...";
+
+        thinkingText.style.display = "block";
+
+    } else {
+
+        thinkingText.textContent =
+            "SYSTEM READY";
+
+        thinkingText.style.display = "block";
+    }
+}
+
+
+// ============================================================
+// SPEECH SYNTHESIS
+// ============================================================
+
+function loadVoices() {
+
+    if (!("speechSynthesis" in window)) {
+
+        if (voiceStatus) {
+            voiceStatus.textContent =
+                "VOICE: NOT SUPPORTED";
+        }
+
+        return;
+    }
+
+
+    function refreshVoices() {
+
+        voices =
+            window.speechSynthesis.getVoices();
+
+
+        if (voiceSelect) {
+
+            voiceSelect.innerHTML = "";
+
+
+            voices.forEach(
+                (voice, index) => {
+
+                    const option =
+                        document.createElement("option");
+
+                    option.value = index;
+
+                    option.textContent =
+                        voice.name +
+                        " (" +
+                        voice.lang +
+                        ")";
+
+                    voiceSelect.appendChild(
+                        option
+                    );
+                }
+            );
+
+
+            const savedVoice =
+                localStorage.getItem(
+                    "jarvisVoice"
+                );
+
+
+            if (
+                savedVoice !== null &&
+                voices[savedVoice]
+            ) {
+
+                voiceSelect.value =
+                    savedVoice;
+            }
+        }
+
+
+        if (voiceStatus) {
+
+            voiceStatus.textContent =
+                "VOICE: READY";
+        }
+    }
+
+
+    refreshVoices();
+
+    window.speechSynthesis.onvoiceschanged =
+        refreshVoices;
+}
+
+
+// ============================================================
+// SPEAK
+// ============================================================
+
+function speak(text) {
+
+    if (!("speechSynthesis" in window)) {
+        return;
+    }
+
 
     window.speechSynthesis.cancel();
 
-  }
+
+    const cleanText =
+        String(text)
+            .replace(/[*_#`]/g, "")
+            .replace(/\n+/g, ". ");
 
 
-  isSpeaking = false;
+    const utterance =
+        new SpeechSynthesisUtterance(
+            cleanText
+        );
 
 
-  if (voiceStatus) {
+    utterance.rate =
+        JARVIS_CONFIG.speechRate;
 
-    voiceStatus.textContent =
-      "READY";
+    utterance.pitch =
+        JARVIS_CONFIG.speechPitch;
 
-  }
 
+    if (
+        voiceSelect &&
+        voices.length > 0
+    ) {
+
+        const selectedIndex =
+            parseInt(
+                voiceSelect.value,
+                10
+            );
+
+
+        if (voices[selectedIndex]) {
+
+            utterance.voice =
+                voices[selectedIndex];
+        }
+    }
+
+
+    utterance.onstart = function () {
+
+        if (voiceStatus) {
+            voiceStatus.textContent =
+                "VOICE: SPEAKING";
+        }
+    };
+
+
+    utterance.onend = function () {
+
+        if (voiceStatus) {
+            voiceStatus.textContent =
+                "VOICE: READY";
+        }
+    };
+
+
+    utterance.onerror = function () {
+
+        if (voiceStatus) {
+            voiceStatus.textContent =
+                "VOICE: ERROR";
+        }
+    };
+
+
+    window.speechSynthesis.speak(
+        utterance
+    );
 }
 
 
-/* =====================================================
-   SPEECH RECOGNITION
-===================================================== */
+// ============================================================
+// STOP VOICE
+// ============================================================
 
-function setupSpeechRecognition() {
+function stopSpeaking() {
 
-  const SpeechRecognition =
-    window.SpeechRecognition ||
-    window.webkitSpeechRecognition;
+    if (
+        "speechSynthesis" in window
+    ) {
 
+        window.speechSynthesis.cancel();
+    }
 
-  if (!SpeechRecognition) {
 
     if (voiceStatus) {
 
-      voiceStatus.textContent =
-        "NOT SUPPORTED";
-
+        voiceStatus.textContent =
+            "VOICE: STOPPED";
     }
-
-
-    if (micButton) {
-
-      micButton.disabled =
-        true;
-
-    }
-
-
-    return;
-
-  }
-
-
-  recognition =
-    new SpeechRecognition();
-
-
-  recognition.lang =
-    JARVIS_CONFIG.language;
-
-
-  recognition.continuous =
-    false;
-
-
-  recognition.interimResults =
-    true;
-
-
-  recognition.onstart =
-    function() {
-
-      isListening = true;
-
-
-      micButton.textContent =
-        "🔴";
-
-
-      voiceStatus.textContent =
-        "LISTENING";
-
-
-      setThinking(
-        "Listening..."
-      );
-
-    };
-
-
-  recognition.onresult =
-    function(event) {
-
-      let finalText = "";
-
-
-      for (
-        let i = event.resultIndex;
-        i < event.results.length;
-        i++
-      ) {
-
-        const transcript =
-          event.results[i][0]
-            .transcript;
-
-
-        if (
-          event.results[i].isFinal
-        ) {
-
-          finalText += transcript;
-
-        }
-
-      }
-
-
-      if (
-        finalText.trim()
-      ) {
-
-        userInput.value =
-          finalText.trim();
-
-
-        sendMessage();
-
-      }
-
-    };
-
-
-  recognition.onerror =
-    function(error) {
-
-      console.error(
-        "Speech recognition:",
-        error
-      );
-
-
-      setThinking(
-        "Microphone error."
-      );
-
-    };
-
-
-  recognition.onend =
-    function() {
-
-      isListening = false;
-
-
-      micButton.textContent =
-        "🎙";
-
-
-      voiceStatus.textContent =
-        "READY";
-
-    };
-
 }
 
 
-/* =====================================================
-   MICROPHONE
-===================================================== */
+// ============================================================
+// SPEECH RECOGNITION
+// ============================================================
+
+function setupSpeechRecognition() {
+
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+
+    if (!SpeechRecognition) {
+
+        if (voiceStatus) {
+
+            voiceStatus.textContent =
+                "VOICE INPUT: NOT SUPPORTED";
+        }
+
+        return;
+    }
+
+
+    recognition =
+        new SpeechRecognition();
+
+
+    recognition.continuous = false;
+
+    recognition.interimResults = true;
+
+    recognition.lang = "en-IN";
+
+
+    recognition.onstart = function () {
+
+        listening = true;
+
+        if (micButton) {
+
+            micButton.classList.add(
+                "active"
+            );
+        }
+
+
+        if (voiceStatus) {
+
+            voiceStatus.textContent =
+                "MIC: LISTENING";
+        }
+    };
+
+
+    recognition.onresult = function (event) {
+
+        let finalText = "";
+
+        for (
+            let i = event.resultIndex;
+            i < event.results.length;
+            i++
+        ) {
+
+            finalText +=
+                event.results[i][0].transcript;
+        }
+
+
+        if (userInput) {
+
+            userInput.value =
+                finalText;
+        }
+    };
+
+
+    recognition.onerror = function (event) {
+
+        console.error(
+            "Speech recognition error:",
+            event.error
+        );
+
+
+        listening = false;
+
+
+        if (micButton) {
+
+            micButton.classList.remove(
+                "active"
+            );
+        }
+
+
+        if (voiceStatus) {
+
+            voiceStatus.textContent =
+                "MIC: ERROR";
+        }
+    };
+
+
+    recognition.onend = function () {
+
+        listening = false;
+
+
+        if (micButton) {
+
+            micButton.classList.remove(
+                "active"
+            );
+        }
+
+
+        if (voiceStatus) {
+
+            voiceStatus.textContent =
+                "VOICE: READY";
+        }
+    };
+}
+
+
+// ============================================================
+// MICROPHONE
+// ============================================================
 
 function toggleMicrophone() {
 
-  if (!recognition) {
+    if (!recognition) {
 
-    return;
+        addMessage(
+            "JARVIS",
+            "Voice input is not supported by this browser."
+        );
 
-  }
-
-
-  if (isListening) {
-
-    recognition.stop();
-
-    return;
-
-  }
+        return;
+    }
 
 
-  try {
+    if (listening) {
 
-    recognition.start();
+        recognition.stop();
 
-  }
+    } else {
 
-  catch (error) {
+        try {
 
-    console.error(
-      error
-    );
+            recognition.start();
 
-  }
+        } catch (error) {
 
+            console.error(error);
+        }
+    }
 }
 
 
-/* =====================================================
-   MEMORY
-===================================================== */
+// ============================================================
+// CONVERSATION MEMORY
+// ============================================================
 
-function saveMemory() {
+function saveConversationMessage(
+    role,
+    content
+) {
 
-  try {
+    conversationHistory.push({
+        role: role,
+        content: content,
+        timestamp: Date.now()
+    });
+
+
+    if (
+        conversationHistory.length >
+        JARVIS_CONFIG.maxHistory
+    ) {
+
+        conversationHistory =
+            conversationHistory.slice(
+                -JARVIS_CONFIG.maxHistory
+            );
+    }
+
 
     localStorage.setItem(
-      "jarvisConversation",
-      JSON.stringify(
-        conversationHistory
-          .slice(-50)
-      )
+        "jarvisConversation",
+        JSON.stringify(
+            conversationHistory
+        )
     );
 
 
     if (memoryStatus) {
 
-      memoryStatus.textContent =
-        "ACTIVE";
-
+        memoryStatus.textContent =
+            "MEMORY: ACTIVE";
     }
-
-  }
-
-  catch (error) {
-
-    console.error(
-      "Memory error:",
-      error
-    );
-
-
-    if (memoryStatus) {
-
-      memoryStatus.textContent =
-        "ERROR";
-
-    }
-
-  }
-
 }
 
 
-function loadMemory() {
+// ============================================================
+// LOAD MEMORY
+// ============================================================
 
-  try {
+function loadConversation() {
 
-    const saved =
-      localStorage.getItem(
-        "jarvisConversation"
-      );
+    try {
+
+        const saved =
+            localStorage.getItem(
+                "jarvisConversation"
+            );
 
 
-    if (saved) {
+        if (saved) {
 
-      conversationHistory =
-        JSON.parse(saved);
+            conversationHistory =
+                JSON.parse(saved);
+        }
 
+
+        if (memoryStatus) {
+
+            memoryStatus.textContent =
+                "MEMORY: ACTIVE";
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Memory load error:",
+            error
+        );
+
+        conversationHistory = [];
     }
-
-  }
-
-  catch (error) {
-
-    conversationHistory = [];
-
-  }
-
 }
 
 
-/* =====================================================
-   NETWORK
-===================================================== */
+// ============================================================
+// NETWORK STATUS
+// ============================================================
 
 function updateNetworkStatus() {
 
-  if (networkStatus) {
-
-    networkStatus.textContent =
-      navigator.onLine
-        ? "ONLINE"
-        : "OFFLINE";
-
-  }
+    if (!networkStatus) return;
 
 
-  if (aiStatus) {
+    function update() {
 
-    aiStatus.textContent =
-      JARVIS_CONFIG.backendUrl
-        ? "BACKEND"
-        : "LOCAL";
+        if (navigator.onLine) {
 
-  }
+            networkStatus.textContent =
+                "NETWORK: ONLINE";
+
+        } else {
+
+            networkStatus.textContent =
+                "NETWORK: OFFLINE";
+        }
+    }
 
 
-  if (aiStatus2) {
+    update();
 
-    aiStatus2.textContent =
-      JARVIS_CONFIG.backendUrl
-        ? "BACKEND"
-        : "LOCAL";
+    window.addEventListener(
+        "online",
+        update
+    );
 
-  }
-
+    window.addEventListener(
+        "offline",
+        update
+    );
 }
 
 
-window.addEventListener(
-  "online",
-  updateNetworkStatus
-);
-
-
-window.addEventListener(
-  "offline",
-  updateNetworkStatus
-);
-
-
-/* =====================================================
-   CLOCK
-===================================================== */
+// ============================================================
+// CLOCK
+// ============================================================
 
 function updateClock() {
 
-  if (footerTime) {
+    if (!footerTime) return;
+
+
+    const now = new Date();
+
 
     footerTime.textContent =
-      new Date()
-        .toLocaleTimeString();
-
-  }
-
-
-  setTimeout(
-    updateClock,
-    1000
-  );
-
+        now.toLocaleString(
+            undefined,
+            {
+                weekday: "short",
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit"
+            }
+        );
 }
 
 
-/* =====================================================
-   STUDY TIMER
-===================================================== */
+// ============================================================
+// STUDY TIMER
+// ============================================================
 
 function startStudyTimer() {
 
-  if (studyRunning) {
-
-    return;
-
-  }
+    if (studyInterval !== null) {
+        return;
+    }
 
 
-  studyRunning = true;
+    studyInterval =
+        setInterval(
+            function () {
 
+                studySeconds++;
 
-  studyInterval =
-    setInterval(
-      function() {
+                updateStudyTimer();
 
-        studySeconds++;
+                saveStudyTime();
 
-
-        updateStudyDisplay();
-
-
-        saveStudyTime();
-
-      },
-      1000
-    );
-
-
-  setThinking(
-    "Study session running."
-  );
-
+            },
+            1000
+        );
 }
 
 
 function pauseStudyTimer() {
 
-  studyRunning = false;
+    if (studyInterval !== null) {
 
+        clearInterval(
+            studyInterval
+        );
 
-  clearInterval(
-    studyInterval
-  );
-
-
-  studyInterval =
-    null;
-
-
-  saveStudyTime();
-
-
-  setThinking(
-    "Study session paused."
-  );
-
+        studyInterval = null;
+    }
 }
 
 
 function resetStudyTimer() {
 
-  pauseStudyTimer();
+    pauseStudyTimer();
 
+    studySeconds = 0;
 
-  studySeconds = 0;
+    updateStudyTimer();
 
-
-  updateStudyDisplay();
-
-
-  saveStudyTime();
-
-
-  setThinking(
-    "Study timer reset."
-  );
-
+    saveStudyTime();
 }
 
 
-function updateStudyDisplay() {
+function updateStudyTimer() {
 
-  if (studyTimer) {
+    if (!studyTimerDisplay) {
+        return;
+    }
 
-    studyTimer.textContent =
-      formatStudyTime(
-        studySeconds
-      );
 
-  }
-
+    studyTimerDisplay.textContent =
+        formatStudyTime(
+            studySeconds
+        );
 }
 
 
-function formatStudyTime(
-  totalSeconds
-) {
+function formatStudyTime(seconds) {
 
-  const hours =
-    Math.floor(
-      totalSeconds / 3600
+    const hours =
+        Math.floor(seconds / 3600);
+
+    const minutes =
+        Math.floor(
+            (seconds % 3600) / 60
+        );
+
+    const secs =
+        seconds % 60;
+
+
+    return (
+        String(hours).padStart(2, "0") +
+        ":" +
+        String(minutes).padStart(2, "0") +
+        ":" +
+        String(secs).padStart(2, "0")
     );
-
-
-  const minutes =
-    Math.floor(
-      (totalSeconds % 3600) / 60
-    );
-
-
-  const seconds =
-    totalSeconds % 60;
-
-
-  return (
-    String(hours)
-      .padStart(2, "0") +
-    ":" +
-    String(minutes)
-      .padStart(2, "0") +
-    ":" +
-    String(seconds)
-      .padStart(2, "0")
-  );
-
 }
 
 
 function saveStudyTime() {
 
-  const today =
-    new Date()
-      .toISOString()
-      .slice(0, 10);
-
-
-  localStorage.setItem(
-    "jarvisStudyDate",
-    today
-  );
-
-
-  localStorage.setItem(
-    "jarvisStudySeconds",
-    studySeconds
-  );
-
+    localStorage.setItem(
+        "jarvisStudySeconds",
+        String(studySeconds)
+    );
 }
 
 
 function loadStudyTime() {
 
-  const today =
-    new Date()
-      .toISOString()
-      .slice(0, 10);
-
-
-  const savedDate =
-    localStorage.getItem(
-      "jarvisStudyDate"
-    );
-
-
-  if (
-    savedDate === today
-  ) {
-
-    studySeconds =
-      Number(
+    const saved =
         localStorage.getItem(
-          "jarvisStudySeconds"
-        )
-      ) || 0;
+            "jarvisStudySeconds"
+        );
 
-  }
-  else {
 
-    studySeconds = 0;
+    if (saved) {
 
-  }
+        studySeconds =
+            parseInt(saved, 10) || 0;
+    }
 
+
+    updateStudyTimer();
 }
 
 
-/* =====================================================
-   GLOBAL FUNCTIONS
-===================================================== */
+// ============================================================
+// BACKEND CONNECTION TEST
+// ============================================================
 
-window.openWebApp =
-  openWebApp;
+async function testBackendConnection() {
 
-window.sendMessage =
-  sendMessage;
+    try {
 
-window.stopVoice =
-  stopVoice;
+        const params =
+            new URLSearchParams();
+
+        params.set(
+            "message",
+            "hello"
+        );
+
+        params.set(
+            "history",
+            "[]"
+        );
 
 
-/* =====================================================
-   START
-===================================================== */
+        const response =
+            await fetch(
+                JARVIS_CONFIG.backendUrl +
+                "?" +
+                params.toString(),
+                {
+                    method: "GET",
+                    cache: "no-store"
+                }
+            );
 
-initializeJarvis();
+
+        if (!response.ok) {
+
+            throw new Error(
+                "HTTP " +
+                response.status
+            );
+        }
+
+
+        const data =
+            await response.json();
+
+
+        if (
+            data.success &&
+            data.reply
+        ) {
+
+            if (aiStatus) {
+                aiStatus.textContent =
+                    "AI: ONLINE";
+            }
+
+            if (aiStatus2) {
+                aiStatus2.textContent =
+                    "GEMINI: CONNECTED";
+            }
+
+            return true;
+        }
+
+
+        throw new Error(
+            data.error ||
+            "Backend test failed."
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Backend connection test failed:",
+            error
+        );
+
+
+        if (aiStatus) {
+            aiStatus.textContent =
+                "AI: ERROR";
+        }
+
+        if (aiStatus2) {
+            aiStatus2.textContent =
+                "GEMINI: OFFLINE";
+        }
+
+
+        return false;
+    }
+}
+
+
+// ============================================================
+// GLOBAL FUNCTIONS
+// ============================================================
+
+window.sendMessage = sendMessage;
+
+window.toggleMicrophone =
+    toggleMicrophone;
+
+window.stopSpeaking =
+    stopSpeaking;
+
+window.startStudyTimer =
+    startStudyTimer;
+
+window.pauseStudyTimer =
+    pauseStudyTimer;
+
+window.resetStudyTimer =
+    resetStudyTimer;
+
+
+// ============================================================
+// START JARVIS
+// ============================================================
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        loadStudyTime();
+
+        initializeJarvis();
+
+        // Test backend after page loads.
+        setTimeout(
+            testBackendConnection,
+            1200
+        );
+    }
+);
